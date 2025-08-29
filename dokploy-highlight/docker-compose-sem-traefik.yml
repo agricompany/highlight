@@ -82,6 +82,7 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./init-postgres.sql:/docker-entrypoint-initdb.d/init-postgres.sql
     networks:
       - highlight-network
     healthcheck:
@@ -140,8 +141,6 @@ services:
     container_name: highlight-backend
     image: ghcr.io/highlight/highlight-backend:docker-v0.5.2
     restart: on-failure
-    ports:
-      - "8082:8082"
     volumes:
       - highlight-data:/highlight-data
     environment:
@@ -163,6 +162,7 @@ services:
       - PSQL_USER=${POSTGRES_USER}
       - PSQL_PASSWORD=${POSTGRES_PASSWORD}
       - PSQL_PORT=5432
+      - PSQL_DOCKER_HOST=postgres
       
       # Configurações Redis (SEM SENHA)
       - REDIS_EVENTS_STAGING_ENDPOINT=redis:6379
@@ -189,6 +189,8 @@ services:
       - LOG_LEVEL=info
       - ENVIRONMENT=production
       - OBJECT_STORAGE_FS=/highlight-data
+      - TZ=America/Sao_Paulo
+      - RENDER_PREVIEW=false
       
       # Licença Enterprise (hobby mode)
       - LICENSE_KEY=
@@ -224,8 +226,6 @@ services:
     container_name: highlight-frontend
     image: ghcr.io/highlight/highlight-frontend:docker-v0.5.2
     restart: on-failure
-    ports:
-      - "3000:3000"
     environment:
       - REACT_APP_FRONTEND_URI=https://highlight.agricompany-dev.com.br
       - REACT_APP_PRIVATE_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/private
