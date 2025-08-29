@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <!-- Configuração básica do servidor -->
+    <logger>
+        <level>information</level>
+        <console>true</console>
+    </logger>
+
+    <!-- Configurações de rede -->
+    <listen_host>::</listen_host>
+    <http_port>8123</http_port>
+    <tcp_port>9000</tcp_port>
+
+    <!-- Configurações de performance -->
+    <max_connections>4096</max_connections>
+    <keep_alive_timeout>3</keep_alive_timeout>
+    <max_concurrent_queries>100</max_concurrent_queries>
+
+    <!-- Desabilitar verificação de configurações incorretas -->
+    <skip_check_for_incorrect_settings>1</skip_check_for_incorrect_settings>
+</clickhouse>
