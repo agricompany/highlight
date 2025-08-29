@@ -140,6 +140,8 @@ services:
     container_name: highlight-backend
     image: ghcr.io/highlight/highlight-backend:docker-v0.5.2
     restart: on-failure
+    ports:
+      - "8082:8082"
     volumes:
       - highlight-data:/highlight-data
     environment:
@@ -200,15 +202,8 @@ services:
       - REACT_APP_PRIVATE_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/private
       - REACT_APP_PUBLIC_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/public
       - REACT_APP_AUTH_MODE=password
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.highlight-backend.rule=Host(`api-highlight.agricompany-dev.com.br`)"
-      - "traefik.http.routers.highlight-backend.tls=true"
-      - "traefik.http.routers.highlight-backend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.highlight-backend.loadbalancer.server.port=8082"
     networks:
       - highlight-network
-      - traefik-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -229,6 +224,8 @@ services:
     container_name: highlight-frontend
     image: ghcr.io/highlight/highlight-frontend:docker-v0.5.2
     restart: on-failure
+    ports:
+      - "3000:3000"
     environment:
       - REACT_APP_FRONTEND_URI=https://highlight.agricompany-dev.com.br
       - REACT_APP_PRIVATE_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/private
@@ -236,15 +233,8 @@ services:
       - REACT_APP_AUTH_MODE=password
       - AUTH_MODE=password
       - SSL=false
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.highlight-frontend.rule=Host(`highlight.agricompany-dev.com.br`)"
-      - "traefik.http.routers.highlight-frontend.tls=true"
-      - "traefik.http.routers.highlight-frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.highlight-frontend.loadbalancer.server.port=3000"
     networks:
       - highlight-network
-      - traefik-network
     depends_on:
       backend:
         condition: service_healthy
@@ -275,6 +265,3 @@ volumes:
 networks:
   highlight-network:
     driver: bridge
-  traefik-network:
-    external: true
-    name: traefik-network
