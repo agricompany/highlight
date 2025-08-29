@@ -1,0 +1,286 @@
+x-local-logging: &local-logging
+  driver: local
+
+services:
+  # ==================== INFRAESTRUTURA ====================
+  
+  zookeeper:
+    logging: *local-logging
+    image: confluentinc/cp-zookeeper:7.7.0
+    container_name: highlight-zookeeper
+    restart: on-failure
+    volumes:
+      - zoo-data:/var/lib/zookeeper/data
+      - zoo-log:/var/lib/zookeeper/log
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_SERVERS: server.1=zookeeper:2888:3888
+    networks:
+      - highlight-network
+
+  kafka:
+    logging: *local-logging
+    image: confluentinc/cp-kafka:7.7.0
+    container_name: highlight-kafka
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    restart: on-failure
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_BROKER_ID: 1
+      KAFKA_CONSUMER_MAX_PARTITION_FETCH_BYTES: 268435456
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LOG_RETENTION_HOURS: 1
+      KAFKA_LOG_SEGMENT_BYTES: 268435456
+      KAFKA_MESSAGE_MAX_BYTES: 268435456
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_PRODUCER_MAX_REQUEST_SIZE: 268435456
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 268435456
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    networks:
+      - highlight-network
+
+  redis:
+    logging: *local-logging
+    container_name: highlight-redis
+    image: redis:8.0.2
+    restart: on-failure
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    ports:
+      - '6379:6379'
+    command:
+      - redis-server
+      - --save 60 1
+      - --loglevel warning
+    networks:
+      - highlight-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    logging: *local-logging
+    container_name: highlight-postgres
+    image: ankane/pgvector:v0.5.1
+    restart: on-failure
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - highlight-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  clickhouse:
+    logging: *local-logging
+    container_name: highlight-clickhouse
+    image: clickhouse/clickhouse-server:24.3.15.72-alpine
+    restart: on-failure
+    ports:
+      - '8123:8123'
+      - '9000:9000'
+    environment:
+      CLICKHOUSE_DB: highlight
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      # CLICKHOUSE_PASSWORD: # SEM SENHA
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+      - ./clickhouse-config/config-simples.xml:/etc/clickhouse-server/config.d/highlight.xml
+      - ./clickhouse-users/users-sem-senha-nenhuma.xml:/etc/clickhouse-server/users.d/highlight-users.xml
+    networks:
+      - highlight-network
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'SELECT 1' | clickhouse-client --host=localhost --port=9000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # ==================== COLLECTOR ====================
+  
+  collector:
+    logging: *local-logging
+    restart: on-failure
+    build:
+      dockerfile: ./collector-fixed.Dockerfile
+      context: .
+      args:
+        - IN_DOCKER_GO=${IN_DOCKER_GO}
+        - SSL=${SSL}
+    container_name: highlight-collector
+    environment:
+      - IN_DOCKER_GO=${IN_DOCKER_GO}
+      - SSL=${SSL}
+    ports:
+      - '4317:4317'
+      - '4318:4318'
+      - '4319:4319'
+      - '24224:24224'
+      - '8318:8318'
+      - '8888:8888'
+    networks:
+      - highlight-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4319/health/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==================== APLICAÇÃO ====================
+  
+  backend:
+    container_name: highlight-backend
+    image: ghcr.io/highlight/highlight-backend:docker-v0.5.2
+    restart: on-failure
+    ports:
+      - '8082:8082'
+    volumes:
+      - highlight-data:/highlight-data
+    environment:
+      - ADMIN_PASSWORD=AgriHighlight2024@
+      - AUTH_MODE=password
+      - REACT_APP_AUTH_MODE=password
+      - IN_DOCKER=true
+      - IN_DOCKER_GO=true
+      - ON_PREM=true
+      - SSL=false
+      
+      # Configurações PostgreSQL
+      - POSTGRES_DB=highlight
+      - POSTGRES_USER=highlight
+      - POSTGRES_PASSWORD=AgriPostgres2024Secure!
+      - PSQL_HOST=postgres
+      - PSQL_DB=highlight
+      - PSQL_USER=highlight
+      - PSQL_PASSWORD=AgriPostgres2024Secure!
+      - PSQL_PORT=5432
+      
+      # Configurações Redis (SEM SENHA)
+      - REDIS_EVENTS_STAGING_ENDPOINT=redis:6379
+      
+      # Configurações Kafka
+      - KAFKA_SERVERS=kafka:9092
+      
+      # Configurações ClickHouse (SEM SENHA)
+      - CLICKHOUSE_ADDRESS=clickhouse:9000
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_USERNAME=default
+      - CLICKHOUSE_DATABASE=default
+      
+      # Configurações OpenTelemetry
+      - OTLP_ENDPOINT=http://collector:4318
+      
+      # Configurações de segurança
+      - SESSION_SECRET=AgriSession2024SuperSecretKey!
+      - JWT_SECRET=AgriJWT2024SuperSecretSigningKey!
+      - JWT_ACCESS_SECRET=AgriJWT2024SuperSecretSigningKey!
+      
+      # Configurações gerais
+      - STORAGE_TYPE=filesystem
+      - LOG_LEVEL=info
+      - ENVIRONMENT=dev
+      - OBJECT_STORAGE_FS=/highlight-data
+      
+      # Licença Enterprise (hobby mode)
+      - LICENSE_KEY=
+      - DISABLE_ENTERPRISE_FEATURES=true
+      
+      # URLs da aplicação
+      - REACT_APP_FRONTEND_URI=http://localhost:3000
+      - REACT_APP_PRIVATE_GRAPH_URI=http://localhost:8082/private
+      - REACT_APP_PUBLIC_GRAPH_URI=http://localhost:8082/public
+      - REACT_APP_AUTH_MODE=password
+    networks:
+      - highlight-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  frontend:
+    container_name: highlight-frontend
+    image: ghcr.io/highlight/highlight-frontend:docker-v0.5.2
+    restart: on-failure
+    ports:
+      - '3000:3000'
+    environment:
+      - REACT_APP_FRONTEND_URI=http://localhost:3000
+      - REACT_APP_PRIVATE_GRAPH_URI=http://localhost:8082/private
+      - REACT_APP_PUBLIC_GRAPH_URI=http://localhost:8082/public
+      - REACT_APP_AUTH_MODE=password
+      - AUTH_MODE=password
+      - SSL=false
+    networks:
+      - highlight-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres-data:
+    driver: local
+  clickhouse-data:
+    driver: local
+  clickhouse-logs:
+    driver: local
+  redis-data:
+    driver: local
+  kafka-data:
+    driver: local
+  zoo-log:
+    driver: local
+  zoo-data:
+    driver: local
+  highlight-data:
+    driver: local
+
+networks:
+  highlight-network:
+    driver: bridge

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <!-- Configurações básicas para Highlight.io -->
+    
+    <!-- Configurações de rede -->
+    <listen_host>0.0.0.0</listen_host>
+    <http_port>8123</http_port>
+    <tcp_port>9000</tcp_port>
+    
+    <!-- Configurações de log -->
+    <logger>
+        <level>information</level>
+        <console>true</console>
+        <log>/var/log/clickhouse-server/clickhouse-server.log</log>
+        <errorlog>/var/log/clickhouse-server/clickhouse-server.err.log</errorlog>
+        <size>1000M</size>
+        <count>10</count>
+    </logger>
+    
+    <!-- Configurações de cache -->
+    <mark_cache_size>5368709120</mark_cache_size>
+    <builtin_dictionaries_reload_interval>3600</builtin_dictionaries_reload_interval>
+    <max_session_timeout>3600</max_session_timeout>
+    <default_session_timeout>60</default_session_timeout>
+    
+    <!-- Configurações de compressão -->
+    <compression>
+        <case>
+            <method>lz4</method>
+        </case>
+    </compression>
+    
+    <!-- Pular verificação de configurações incorretas -->
+    <skip_check_for_incorrect_settings>1</skip_check_for_incorrect_settings>
+</clickhouse>

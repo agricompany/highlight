@@ -1,0 +1,47 @@
+# Configuração baseada no exemplo oficial do OpenTelemetry Collector
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - "http://*"
+            - "https://*"
+
+processors:
+  batch:
+
+exporters:
+  # Debug exporter - útil para desenvolvimento
+  debug:
+    verbosity: basic
+  
+  # OTLP HTTP exporter para enviar para o backend
+  otlphttp:
+    endpoint: http://backend:8082/otel
+
+service:
+  extensions: [health_check]
+  
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, otlphttp]
+      
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, otlphttp]
+      
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, otlphttp]
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:4319

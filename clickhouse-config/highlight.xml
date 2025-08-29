@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <!-- Configurações específicas para Highlight.io -->
+    
+    <!-- Configurações de rede -->
+    <listen_host>0.0.0.0</listen_host>
+    <http_port>8123</http_port>
+    <tcp_port>9000</tcp_port>
+    
+    <!-- Configurações de memória removidas (vão para users.xml) -->
+    
+    <!-- Configurações de log -->
+    <logger>
+        <level>information</level>
+        <console>true</console>
+        <log>/var/log/clickhouse-server/clickhouse-server.log</log>
+        <errorlog>/var/log/clickhouse-server/clickhouse-server.err.log</errorlog>
+        <size>1000M</size>
+        <count>10</count>
+    </logger>
+    
+    <!-- Configurações de retenção de dados -->
+    <merge_tree>
+        <max_suspicious_broken_parts>100</max_suspicious_broken_parts>
+        <parts_to_delay_insert>150</parts_to_delay_insert>
+        <parts_to_throw_insert>300</parts_to_throw_insert>
+        <max_delay_to_insert>1</max_delay_to_insert>
+        <max_parts_in_total>100000</max_parts_in_total>
+        <replicated_deduplication_window>100</replicated_deduplication_window>
+        <replicated_deduplication_window_seconds>604800</replicated_deduplication_window_seconds>
+        <max_replicated_logs_to_keep>1000</max_replicated_logs_to_keep>
+        <min_replicated_logs_to_keep>10</min_replicated_logs_to_keep>
+    </merge_tree>
+    
+    <!-- Configurações de performance -->
+    <mark_cache_size>5368709120</mark_cache_size>
+    <builtin_dictionaries_reload_interval>3600</builtin_dictionaries_reload_interval>
+    <max_session_timeout>3600</max_session_timeout>
+    <default_session_timeout>60</default_session_timeout>
+    
+    <!-- Configurações de compressão -->
+    <compression>
+        <case>
+            <method>lz4</method>
+        </case>
+    </compression>
+    
+    <!-- Configurações de usuários -->
+    <users_config>users.xml</users_config>
+    
+    <!-- Profiles e quotas movidos para users.xml -->
+</clickhouse>

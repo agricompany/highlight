@@ -1,0 +1,93 @@
+receivers:
+  fluentforward:
+    endpoint: '0.0.0.0:24224'
+  tcplog:
+    listen_address: '0.0.0.0:34302'
+  syslog:
+    udp:
+      listen_address: '0.0.0.0:6513'
+    tcp:
+      listen_address: '0.0.0.0:6514'
+    protocol: 'rfc5424'
+    enable_octet_counting: true
+  otlp:
+    protocols:
+      grpc:
+        endpoint: '0.0.0.0:4317'
+        include_metadata: true
+        max_recv_msg_size_mib: 1000
+      http:
+        endpoint: '0.0.0.0:4318'
+        max_request_body_size: 0
+        include_metadata: true
+        cors:
+          allowed_origins:
+            - 'https://*'
+            - 'http://*'
+            - 'capacitor://*'
+          allowed_headers:
+            - 'X-Highlight-Request'
+            - 'Origin'
+            - 'Content-Type'
+            - 'Accept'
+            - 'Access-Control-Request-Headers'
+            - 'Access-Control-Request-Method'
+            - 'Access-Control-Allow-Origin'
+            - 'Access-Control-Allow-Methods'
+            - 'Access-Control-Max-Age'
+            - 'Referer'
+            - 'Traceparent'
+            - 'Tracestate'
+          max_age: 7200
+
+exporters:
+  debug:
+    sampling_initial: 1
+    sampling_thereafter: 1000
+    verbosity: basic
+  otlphttp:
+    endpoint: 'https://host.docker.internal:8082/otel'
+    compression: snappy
+    tls:
+      insecure_skip_verify: true
+
+processors:
+  memory_limiter:
+    limit_mib: 4096
+    spike_limit_mib: 512
+    check_interval: 0.1s
+  batch:
+    timeout: 1s
+    send_batch_size: 1000
+    send_batch_max_size: 10000
+  attributes:
+    actions:
+      - key: highlight.project_id
+        from_context: metadata.x-highlight-project
+        action: insert
+
+service:
+  telemetry:
+    logs:
+      level: 'info'
+    metrics:
+      level: detailed
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, attributes]
+      exporters: [otlphttp, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, attributes]
+      exporters: [otlphttp, debug]
+    logs:
+      receivers: [otlp, fluentforward, tcplog, syslog]
+      processors: [memory_limiter, batch, attributes]
+      exporters: [otlphttp, debug]
+
+extensions:
+  health_check:
+    endpoint: '0.0.0.0:4319'
+    path: '/health/status'

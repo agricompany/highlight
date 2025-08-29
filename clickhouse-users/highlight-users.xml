@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <!-- Profiles de configuração -->
+    <profiles>
+        <default>
+            <max_memory_usage>10000000000</max_memory_usage>
+            <max_memory_usage_for_user>0</max_memory_usage_for_user>
+            <use_uncompressed_cache>0</use_uncompressed_cache>
+            <load_balancing>random</load_balancing>
+        </default>
+        
+        <readonly>
+            <readonly>1</readonly>
+            <max_memory_usage>5000000000</max_memory_usage>
+        </readonly>
+    </profiles>
+    
+    <!-- Configurações de quota -->
+    <quotas>
+        <default>
+            <interval>
+                <duration>3600</duration>
+                <queries>0</queries>
+                <errors>0</errors>
+                <result_rows>0</result_rows>
+                <read_rows>0</read_rows>
+                <execution_time>0</execution_time>
+            </interval>
+        </default>
+    </quotas>
+    
+    <!-- Usuários -->
+    <users>
+        <!-- Usuário default com senha -->
+        <default>
+            <password>AgriClickHouse2024!</password>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            <profile>default</profile>
+            <quota>default</quota>
+            <databases>
+                <database>*</database>
+            </databases>
+        </default>
+        
+        <!-- Usuário específico para Highlight -->
+        <highlight>
+            <password>AgriClickHouse2024!</password>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            <profile>default</profile>
+            <quota>default</quota>
+            <databases>
+                <database>*</database>
+            </databases>
+            <access_management>1</access_management>
+        </highlight>
+        
+        <!-- Usuário readonly para consultas -->
+        <highlight_readonly>
+            <password>AgriClickHouseRead2024!</password>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            <profile>readonly</profile>
+            <quota>default</quota>
+            <databases>
+                <database>highlight</database>
+            </databases>
+        </highlight_readonly>
+    </users>
+</clickhouse>

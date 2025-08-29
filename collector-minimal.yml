@@ -1,0 +1,44 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: '0.0.0.0:4317'
+      http:
+        endpoint: '0.0.0.0:4318'
+        cors:
+          allowed_origins:
+            - 'http://*'
+            - 'https://*'
+
+exporters:
+  debug:
+    verbosity: basic
+  otlphttp:
+    endpoint: 'http://backend:8082/otel'
+
+processors:
+  memory_limiter:
+    limit_mib: 2048
+    check_interval: 1s
+  batch:
+    timeout: 1s
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp, debug]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp, debug]
+
+extensions:
+  health_check:
+    endpoint: '0.0.0.0:4319'
