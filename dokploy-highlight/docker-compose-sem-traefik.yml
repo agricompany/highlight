@@ -113,6 +113,27 @@ services:
       retries: 10
       start_period: 60s
 
+  # ==================== COLLECTOR ====================
+  
+  collector:
+    logging: *local-logging
+    restart: on-failure
+    image: otel/opentelemetry-collector-contrib:0.128.0
+    container_name: highlight-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./collector.yml:/etc/otel-collector-config.yaml
+    networks:
+      - highlight-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4319/health/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # ==================== APLICAÇÃO ====================
   
   backend:
@@ -152,8 +173,8 @@ services:
       - CLICKHOUSE_USERNAME=default
       - CLICKHOUSE_DATABASE=default
       
-      # Configurações OpenTelemetry (DESABILITADO)
-      # - OTLP_ENDPOINT=http://collector:4318
+      # Configurações OpenTelemetry
+      - OTLP_ENDPOINT=http://collector:4318
       
       # Configurações de segurança
       - SESSION_SECRET=AgriSession2024SuperSecretKey!
