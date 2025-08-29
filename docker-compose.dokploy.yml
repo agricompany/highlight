@@ -64,7 +64,6 @@ services:
       - redis-server
       - --save 60 1
       - --loglevel warning
-      - --requirepass ${REDIS_PASSWORD}
     networks:
       - highlight-network
     healthcheck:
@@ -103,16 +102,16 @@ services:
       CLICKHOUSE_DB: highlight
       CLICKHOUSE_USER: ${CLICKHOUSE_USER}
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
-      CLICKHOUSE_PASSWORD: highlight123
+      # CLICKHOUSE_PASSWORD: # SEM SENHA
     volumes:
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-logs:/var/log/clickhouse-server
       - ./clickhouse-config/config-simples.xml:/etc/clickhouse-server/config.d/highlight.xml
-      - ./clickhouse-users/users-com-senha.xml:/etc/clickhouse-server/users.d/highlight-users.xml
+      - ./clickhouse-users/users-sem-senha-nenhuma.xml:/etc/clickhouse-server/users.d/highlight-users.xml
     networks:
       - highlight-network
     healthcheck:
-      test: ["CMD-SHELL", "echo 'SELECT 1' | clickhouse-client --host=localhost --port=9000 --password=highlight123 || exit 1"]
+      test: ["CMD-SHELL", "echo 'SELECT 1' | clickhouse-client --host=localhost --port=9000 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 10
@@ -154,32 +153,60 @@ services:
     restart: on-failure
     volumes:
       - highlight-data:/highlight-data
-      - ./ssl-certs:/ssl-certs
     environment:
+      # Configurações de autenticação (HOBBY MODE)
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - AUTH_MODE=${AUTH_MODE}
-      - IN_DOCKER=${IN_DOCKER}
-      - IN_DOCKER_GO=${IN_DOCKER_GO}
-      - ON_PREM=${ON_PREM}
-      - SSL=${SSL}
+      - AUTH_MODE=password
+      - REACT_APP_AUTH_MODE=password
+      - IN_DOCKER=true
+      - IN_DOCKER_GO=true
+      - ON_PREM=true
+      - SSL=false
+      
+      # Configurações PostgreSQL
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - PSQL_HOST=${PSQL_HOST}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_EVENTS_STAGING_ENDPOINT=${REDIS_EVENTS_STAGING_ENDPOINT}
-      - KAFKA_SERVERS=${KAFKA_SERVERS}
-      - CLICKHOUSE_ADDRESS=${CLICKHOUSE_ADDRESS}
-      - CLICKHOUSE_USER=${CLICKHOUSE_USER}
-      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
-      - OTLP_ENDPOINT=${OTLP_ENDPOINT}
+      - PSQL_HOST=postgres
+      - PSQL_DB=${POSTGRES_DB}
+      - PSQL_USER=${POSTGRES_USER}
+      - PSQL_PASSWORD=${POSTGRES_PASSWORD}
+      - PSQL_PORT=5432
+      
+      # Configurações Redis (SEM SENHA)
+      - REDIS_EVENTS_STAGING_ENDPOINT=redis:6379
+      
+      # Configurações Kafka
+      - KAFKA_SERVERS=kafka:9092
+      
+      # Configurações ClickHouse (SEM SENHA)
+      - CLICKHOUSE_ADDRESS=clickhouse:9000
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_USERNAME=default
+      - CLICKHOUSE_DATABASE=default
+      
+      # Configurações OpenTelemetry
+      - OTLP_ENDPOINT=http://collector:4318
+      
+      # Configurações de segurança
       - SESSION_SECRET=${SESSION_SECRET}
       - JWT_SECRET=${JWT_SECRET}
-      - STORAGE_TYPE=${STORAGE_TYPE}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - REACT_APP_FRONTEND_URI=${REACT_APP_FRONTEND_URI}
-      - REACT_APP_PRIVATE_GRAPH_URI=${REACT_APP_PRIVATE_GRAPH_URI}
-      - REACT_APP_PUBLIC_GRAPH_URI=${REACT_APP_PUBLIC_GRAPH_URI}
+      - JWT_ACCESS_SECRET=${JWT_SECRET}
+      
+      # Configurações gerais
+      - STORAGE_TYPE=filesystem
+      - LOG_LEVEL=info
+      - ENVIRONMENT=production
+      - OBJECT_STORAGE_FS=/highlight-data
+      
+      # Licença Enterprise (hobby mode)
+      - LICENSE_KEY=
+      - DISABLE_ENTERPRISE_FEATURES=true
+      
+      # URLs da aplicação (DOKPLOY)
+      - REACT_APP_FRONTEND_URI=https://highlight.agricompany-dev.com.br
+      - REACT_APP_PRIVATE_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/private
+      - REACT_APP_PUBLIC_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/public
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.highlight-backend.rule=Host(`api-highlight.agricompany-dev.com.br`)"
@@ -210,11 +237,12 @@ services:
     image: ghcr.io/highlight/highlight-frontend:docker-v0.5.2
     restart: on-failure
     environment:
-      - REACT_APP_FRONTEND_URI=${REACT_APP_FRONTEND_URI}
-      - REACT_APP_PRIVATE_GRAPH_URI=${REACT_APP_PRIVATE_GRAPH_URI}
-      - REACT_APP_PUBLIC_GRAPH_URI=${REACT_APP_PUBLIC_GRAPH_URI}
-      - AUTH_MODE=${AUTH_MODE}
-      - SSL=${SSL}
+      - REACT_APP_FRONTEND_URI=https://highlight.agricompany-dev.com.br
+      - REACT_APP_PRIVATE_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/private
+      - REACT_APP_PUBLIC_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/public
+      - REACT_APP_AUTH_MODE=password
+      - AUTH_MODE=password
+      - SSL=false
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.highlight-frontend.rule=Host(`highlight.agricompany-dev.com.br`)"
