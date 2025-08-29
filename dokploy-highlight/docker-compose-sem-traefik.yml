@@ -140,7 +140,6 @@ services:
   backend:
     container_name: highlight-backend
     image: ghcr.io/highlight/highlight-backend:docker-v0.5.2
-    restart: on-failure
     volumes:
       - highlight-data:/highlight-data
     environment:
@@ -163,6 +162,7 @@ services:
       - PSQL_PASSWORD=${POSTGRES_PASSWORD}
       - PSQL_PORT=5432
       - PSQL_DOCKER_HOST=postgres
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       
       # Configurações Redis (SEM SENHA)
       - REDIS_EVENTS_STAGING_ENDPOINT=redis:6379
@@ -196,6 +196,11 @@ services:
       - LICENSE_KEY=
       - DISABLE_ENTERPRISE_FEATURES=true
       
+      # OAuth e Migrações
+      - OAUTH_REDIRECT_URL=https://api-highlight.agricompany-dev.com.br/private/oauth/callback
+      - MIGRATE_DB=true
+      - AUTO_MIGRATE=true
+      
       # Configurações extras (igual ao local)
       - DISABLE_CORS=false
       
@@ -215,6 +220,7 @@ services:
         condition: service_healthy
       kafka:
         condition: service_started
+    restart: on-failure:5
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/health"]
       interval: 30s
