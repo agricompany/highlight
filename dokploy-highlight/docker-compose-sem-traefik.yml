@@ -138,7 +138,7 @@ services:
   
   backend:
     container_name: highlight-backend
-    image: ghcr.io/highlight/highlight-backend:docker-v0.5.2
+    image: ghcr.io/highlight/highlight-backend:docker-v0.5.6
     volumes:
       - highlight-data:/highlight-data
     environment:
@@ -221,7 +221,7 @@ services:
 
   frontend:
     container_name: highlight-frontend
-    image: ghcr.io/highlight/highlight-frontend:docker-v0.5.2
+    image: ghcr.io/highlight/highlight-frontend:docker-v0.5.6
     restart: on-failure
     environment:
       - REACT_APP_FRONTEND_URI=https://highlight.agricompany-dev.com.br/
