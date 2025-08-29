@@ -76,9 +76,9 @@ services:
     image: ankane/pgvector:v0.5.1
     restart: on-failure
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: highlight
+      POSTGRES_USER: highlight
+      POSTGRES_PASSWORD: AgriPostgres2024Secure!
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -86,7 +86,7 @@ services:
     networks:
       - highlight-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      test: ['CMD-SHELL', 'pg_isready -U highlight -d highlight']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -144,7 +144,7 @@ services:
       - highlight-data:/highlight-data
     environment:
       # Configurações de autenticação (HOBBY MODE)
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ADMIN_PASSWORD=AgriHighlight2024@
       - AUTH_MODE=password
       - REACT_APP_AUTH_MODE=password
       - IN_DOCKER=true
@@ -153,16 +153,14 @@ services:
       - SSL=false
       
       # Configurações PostgreSQL
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=highlight
+      - POSTGRES_USER=highlight
+      - POSTGRES_PASSWORD=AgriPostgres2024Secure!
       - PSQL_HOST=postgres
-      - PSQL_DB=${POSTGRES_DB}
-      - PSQL_USER=${POSTGRES_USER}
-      - PSQL_PASSWORD=${POSTGRES_PASSWORD}
+      - PSQL_DB=highlight
+      - PSQL_USER=highlight
+      - PSQL_PASSWORD=AgriPostgres2024Secure!
       - PSQL_PORT=5432
-      - PSQL_DOCKER_HOST=postgres
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       
       # Configurações Redis (SEM SENHA)
       - REDIS_EVENTS_STAGING_ENDPOINT=redis:6379
@@ -180,29 +178,19 @@ services:
       - OTLP_ENDPOINT=http://collector:4318
       
       # Configurações de segurança
-      - SESSION_SECRET=${SESSION_SECRET}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_ACCESS_SECRET=${JWT_SECRET}
+      - SESSION_SECRET=AgriSession2024SuperSecretKey!
+      - JWT_SECRET=AgriJWT2024SuperSecretSigningKey!
+      - JWT_ACCESS_SECRET=AgriJWT2024SuperSecretSigningKey!
       
       # Configurações gerais
       - STORAGE_TYPE=filesystem
       - LOG_LEVEL=info
-      - ENVIRONMENT=production
+      - ENVIRONMENT=dev
       - OBJECT_STORAGE_FS=/highlight-data
-      - TZ=America/Sao_Paulo
-      - RENDER_PREVIEW=false
       
       # Licença Enterprise (hobby mode)
       - LICENSE_KEY=
       - DISABLE_ENTERPRISE_FEATURES=true
-      
-      # OAuth e Migrações
-      - OAUTH_REDIRECT_URL=https://api-highlight.agricompany-dev.com.br/private/oauth/callback
-      - MIGRATE_DB=true
-      - AUTO_MIGRATE=true
-      
-      # Configurações extras (igual ao local)
-      - DISABLE_CORS=false
       
       # URLs da aplicação (DOKPLOY)
       - REACT_APP_FRONTEND_URI=https://highlight.agricompany-dev.com.br
