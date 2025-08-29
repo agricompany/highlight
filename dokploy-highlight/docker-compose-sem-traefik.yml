@@ -223,6 +223,8 @@ services:
     container_name: highlight-frontend
     image: ghcr.io/highlight/highlight-frontend:docker-v0.5.2
     restart: on-failure
+    ports:
+      - "3000:3000"
     environment:
       - REACT_APP_FRONTEND_URI=https://highlight.agricompany-dev.com.br
       - REACT_APP_PRIVATE_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/private
