@@ -224,12 +224,14 @@ services:
     image: ghcr.io/highlight/highlight-frontend:docker-v0.5.2
     restart: on-failure
     environment:
-      - REACT_APP_FRONTEND_URI=https://highlight.agricompany-dev.com.br
+      - REACT_APP_FRONTEND_URI=https://highlight.agricompany-dev.com.br/
       - REACT_APP_PRIVATE_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/private
       - REACT_APP_PUBLIC_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/public
       - REACT_APP_AUTH_MODE=password
       - AUTH_MODE=password
       - SSL=false
+      - GENERATE_SOURCEMAP=false
+      - REACT_APP_DISABLE_ANALYTICS=true
     networks:
       - highlight-network
     depends_on:
