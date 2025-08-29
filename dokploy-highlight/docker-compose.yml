@@ -192,10 +192,14 @@ services:
       - LICENSE_KEY=
       - DISABLE_ENTERPRISE_FEATURES=true
       
+      # Configurações extras (igual ao local)
+      - DISABLE_CORS=false
+      
       # URLs da aplicação (DOKPLOY)
       - REACT_APP_FRONTEND_URI=https://highlight.agricompany-dev.com.br
       - REACT_APP_PRIVATE_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/private
       - REACT_APP_PUBLIC_GRAPH_URI=https://api-highlight.agricompany-dev.com.br/public
+      - REACT_APP_AUTH_MODE=password
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.highlight-backend.rule=Host(`api-highlight.agricompany-dev.com.br`)"

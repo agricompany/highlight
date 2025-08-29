@@ -196,7 +196,7 @@ services:
       # Configurações gerais
       - STORAGE_TYPE=filesystem
       - LOG_LEVEL=info
-      - ENVIRONMENT=production
+      - ENVIRONMENT=dev
       - OBJECT_STORAGE_FS=/highlight-data
       
       # Licença Enterprise (hobby mode)
