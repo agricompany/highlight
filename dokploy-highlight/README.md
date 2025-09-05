@@ -13,7 +13,7 @@ dokploy-highlight/
 │   └── users.xml              ← Configuração usuários ClickHouse
 └── README.md                  ← Este arquivo
 ```
-
+ 
 ## 🔧 **PARA QUE SERVE CADA ARQUIVO:**
 
 ### **docker-compose.yml**
